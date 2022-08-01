@@ -10,7 +10,6 @@
 typedef std::uint32_t IDType;
 typedef IDType EntityID;
 typedef IDType ComponentTypeID;
-const IDType NULL_ENTITY = 0;
 
 template<class T>
 class TypeIdGenerator{
