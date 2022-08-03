@@ -1,81 +1,139 @@
 #include <iostream>
-#include <type_traits>
-#define ERRORE(msg) std::cout << "[Error] " << msg << "\n";
-
-// https://unix.stackexchange.com/questions/94809/know-when-a-memory-address-is-aligned-or-unaligned
-
-struct TypeComponent {
-    TypeComponent(const size_t s, const size_t a) : Size(s), Alignment(a) {}
-    const size_t Size;
-    const size_t Alignment;
-};
+#include "Entity_Component_System/Block.h"
+#include <chrono>
+#include <algorithm>
+#include <array>
 
 template<typename T>
-TypeComponent CreateTypeComponent() {
-    std::cout << typeid(T).name() << ": Size = " << sizeof(T) << " alig: " << alignof(T) << "\n";
-    TypeComponent type(sizeof(T), alignof(T));
-    return type;
+void AddComponent(Archetype& archetype) {
+    //std::cout << "Add Comp2 Size: " << sizeof(T) << ", alig: " << alignof(T) << "\n";
+    archetype.Components.push_back(typeid(T).hash_code());
+    archetype.Component_properties.push_back({ typeid(T).hash_code(), sizeof(T), alignof(T) });
 }
 
-template<size_t size>
-class Chunk {
-public:
-    Chunk() {
-        if(!isPowerOfTwo(size)) ERRORE("No opwer of 2");
-        ptr = _mm_malloc(size,16);
-        AbsoluutEndAdres = static_cast<char*>(ptr);
-        std::cout << "Start adres= " << ptr << "\n";
+template<typename T>
+void SetComponent(size_t index, Block& block, Archetype& archtype, T& component) {
+    size_t hashCode = typeid(T).hash_code();
+    auto it = std::find(archtype.Components.begin(), archtype.Components.end(), hashCode);
+    size_t index_Component = 0;
+    if (it != archtype.Components.end()) {
+        index_Component = it - archtype.Components.begin();
     }
-    ~Chunk() {
-        _mm_free(ptr);
+    else {
+        std::cout << "Error archtype bevat het component niet \n";
+        return;
     }
+    block.Set(index, index_Component, &component, sizeof(T));
+}
 
-    template <typename T>
-    void AddComponent(void* Data, TypeComponent Type) {
-        size_t pend = reinterpret_cast<size_t>(AbsoluutEndAdres) % (Type.Size + Type.Alignment);
-        if ((CurrentEndAdres + Type.Alignment + Type.Size + pend) > size) {
-            ERRORE("Out of range");
-            return;
-        }
-        memcpy(AbsoluutEndAdres + pend, Data, Type.Size);
-        if (((reinterpret_cast<size_t>(AbsoluutEndAdres)) & 0x3)){
-            ERRORE("not aligned");
-            std::cout << "Pending bits = " << pend << "\n";
-            std::cout << "Adres = " << reinterpret_cast<size_t>(AbsoluutEndAdres) << "\n";
-        }
-;
-        AbsoluutEndAdres += Type.Size + Type.Alignment + pend;
-        CurrentEndAdres += Type.Size + Type.Alignment + pend;
+template<typename T>
+T* GetComponetPtr(size_t index, Block& block, Archetype& archtype) {
+    size_t hashCode = typeid(T).hash_code();
+    auto it = std::find(archtype.Components.begin(), archtype.Components.end(), hashCode);
+    size_t index_Component = 0;
+    if (it != archtype.Components.end()) {
+        index_Component = it - archtype.Components.begin();
     }
+    else {
+        std::cout << "Error archtype bevat het component niet \n";
+        return nullptr;
+    }
+    return (T*)(block.GetPtr(index, index_Component));
+}
 
-private:
-    bool isPowerOfTwo(size_t n) {
-        return (ceil(log2(n)) == floor(log2(n)));
+template<typename T>
+T GetComponent(size_t index, Block& block, Archetype& archtype) {
+    T component;
+    size_t hashCode = typeid(T).hash_code();
+    auto it = std::find(archtype.Components.begin(), archtype.Components.end(), hashCode);
+    size_t index_Component = 0;
+    if (it != archtype.Components.end()) {
+        index_Component = it - archtype.Components.begin();
     }
-    void* ptr = nullptr;
-    size_t CurrentEndAdres = 0;
-    char* AbsoluutEndAdres = nullptr;
+    else {
+        std::cout << "Error archtype bevat het component niet \n";
+        return component;
+    }
+    block.GetCopy(index, index_Component, &component, sizeof(T));
+    return component;
+}
+
+struct Comp1 {
+    float x=0.0f, y=0.0f, z=0.0f;
+};
+struct Comp2 {
+    long long s = 0;
+    bool t = true;
 };
 
-struct TestComp1 {
-    float x = 0.0f, y = 0.0f, z = 0.0f;
-};
+void TestBlock(Archetype& archetype) {
+    Block block(archetype);
+    Comp1 c1;
+    for (int i = 0; i < block.GetNumberOfRows(); i++) {
+        SetComponent<Comp1>(i, block, archetype, c1);
+    }
+    Comp2 c2;
+    for (int i = 0; i < block.GetNumberOfRows(); i++) {
+        SetComponent<Comp2>(i, block, archetype, c2);
+        c2.s += 100;
+    }
+    for (int i = 0; i < block.GetNumberOfRows(); i++) {
+        Comp1 c = GetComponent<Comp1>(i, block, archetype);
+        //std::cout << "Comp1: " << c1ptr.x << ", " << c1ptr.y << ", " << c1ptr.z << "\n";
+    }
+    for (int i = 0; i < block.GetNumberOfRows(); i++) {
+        Comp2 c = GetComponent<Comp2>(i, block, archetype);
+        //std::cout << "Comp2: " << c.s << ", " << c.t << "\n";
+    }
+    return;
+}
 
-struct TestComp2 {
-    //int Held = 10;
-    bool Deat = true;
+struct Combo {
+    Comp1 c1;
+    Comp2 c2;
 };
+void TestNatifArray() {
+    std::array<Combo, 500> combo;
+    Comp1 c1;
+    for (int i = 0; i < 500; i++) {
+        combo[i].c1 = c1;
+    }
+    Comp2 c2;
+    for (int i = 0; i < 500; i++) {
+        combo[i].c2 = c2;
+        c2.s += 100;
+    }
+    for (int i = 0; i < 500; i++) {
+        Comp1 c1ptr = combo[i].c1;
+        //std::cout << "Comp1: " << c1ptr->x << ", " << c1ptr->y << ", " << c1ptr->z << "\n";
+    }
+    for (int i = 0; i < 500; i++) {
+        Comp2 c = combo[i].c2;
+        //std::cout << "Comp2: " << c.s << ", " << c.t << "\n";
+    }
+}
 
 int main(){
-    //Chunk<64> c;
-    //TestComp1 t1;
-    //c.AddComponent<TestComp1>(&t1, CreateTypeComponent<TestComp1>());
-    //TestComp2 t2;
-    //c.AddComponent<TestComp2>(&t2, CreateTypeComponent<TestComp2>());
-    //c.AddComponent<TestComp1>(&t1, CreateTypeComponent<TestComp1>());
-    //std::cout << "Hallo World!!! \n";
-    std::cout << 85 % 16 << "\n";
-    size_t a = 5/2;
-    std::cout << a << "\n";
+    Archetype archetype;
+    archetype.ID = 1;
+
+    AddComponent<Comp1>(archetype);
+    AddComponent<Comp2>(archetype);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    TestBlock(archetype);
+    auto stop = std::chrono::high_resolution_clock::now();
+
+    auto duration = duration_cast<std::chrono::microseconds>(stop - start);
+    std::cout << "Time taken Block: "
+        << duration.count() << " microseconds" << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();
+    TestNatifArray();
+    stop = std::chrono::high_resolution_clock::now();
+
+     duration = duration_cast<std::chrono::microseconds>(stop - start);
+    std::cout << "Time taken Array: "
+        << duration.count() << " microseconds" << std::endl;
     return 0;
 }

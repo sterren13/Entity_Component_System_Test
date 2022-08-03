@@ -6,28 +6,30 @@
 #define ENTITY_COMPONENT_SYSTEM_TEST_BLOCK_H
 #include <cstdint>
 #include <vector>
+#include <iostream>
 #include "Archetype.h"
 
 struct BlockLayout {
-    int Rows;
-    int Columns;
+    size_t Rows;
+    size_t Columns;
     std::vector<size_t> ComponentSize;
-    std::vector<size_t> RSize;
-    std::vector<size_t> CSize;
+    std::vector<size_t> StartComponentArray;
 };
 
 class Block {
 public:
     Block(Archetype& archetype);
     ~Block();
-    void Set(int row, int column, void* DataPtr, size_t size);
-    void* GetPtr(int row, int column);
-    void GetCopy(int row, int column, void* DestenationPtr, size_t size);
+    void Set(size_t row, size_t column, void* DataPtr, size_t size);
+    void* GetPtr(size_t row, size_t column);
+    void GetCopy(size_t row, size_t column, void* DestenationPtr, size_t size);
+    inline size_t GetNumberOfRows() { return Layout.Rows; }
 private:
     char* ptr;
-    size_t BufferSize = 10;
-    bool isPowerOfTwo(size_t n);
+    char* EndPtr;
+    static size_t BufferSize;
     BlockLayout Layout;
+    std::vector<size_t> ComponentAlayments;
 };
 
 #endif //ENTITY_COMPONENT_SYSTEM_TEST_BLOCK_H
