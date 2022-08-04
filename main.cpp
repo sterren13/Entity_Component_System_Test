@@ -3,6 +3,7 @@
 #include <chrono>
 #include <algorithm>
 #include <array>
+#include <entt/entt.hpp>
 
 template<typename T>
 void AddComponent(Archetype& archetype) {
@@ -12,48 +13,18 @@ void AddComponent(Archetype& archetype) {
 }
 
 template<typename T>
-void SetComponent(size_t index, Block& block, Archetype& archtype, T& component) {
-    size_t hashCode = typeid(T).hash_code();
-    auto it = std::find(archtype.Components.begin(), archtype.Components.end(), hashCode);
-    size_t index_Component = 0;
-    if (it != archtype.Components.end()) {
-        index_Component = it - archtype.Components.begin();
-    }
-    else {
-        std::cout << "Error archtype bevat het component niet \n";
-        return;
-    }
+void SetComponent(size_t index, Block& block, size_t index_Component, T& component) {
     block.Set(index, index_Component, &component, sizeof(T));
 }
 
 template<typename T>
-T* GetComponetPtr(size_t index, Block& block, Archetype& archtype) {
-    size_t hashCode = typeid(T).hash_code();
-    auto it = std::find(archtype.Components.begin(), archtype.Components.end(), hashCode);
-    size_t index_Component = 0;
-    if (it != archtype.Components.end()) {
-        index_Component = it - archtype.Components.begin();
-    }
-    else {
-        std::cout << "Error archtype bevat het component niet \n";
-        return nullptr;
-    }
+T* GetComponetPtr(size_t index, Block& block, size_t index_Component) {
     return (T*)(block.GetPtr(index, index_Component));
 }
 
 template<typename T>
-T GetComponent(size_t index, Block& block, Archetype& archtype) {
+T GetComponent(size_t index, Block& block, size_t index_Component) {
     T component;
-    size_t hashCode = typeid(T).hash_code();
-    auto it = std::find(archtype.Components.begin(), archtype.Components.end(), hashCode);
-    size_t index_Component = 0;
-    if (it != archtype.Components.end()) {
-        index_Component = it - archtype.Components.begin();
-    }
-    else {
-        std::cout << "Error archtype bevat het component niet \n";
-        return component;
-    }
     block.GetCopy(index, index_Component, &component, sizeof(T));
     return component;
 }
@@ -66,54 +37,49 @@ struct Comp2 {
     bool t = true;
 };
 
-void TestBlock(Archetype& archetype) {
-    Block block(archetype);
+void TestBlock(Block& block ,Archetype& archetype) {
     Comp1 c1;
     for (int i = 0; i < block.GetNumberOfRows(); i++) {
-        SetComponent<Comp1>(i, block, archetype, c1);
+        SetComponent<Comp1>(i, block, 0, c1);
     }
     Comp2 c2;
     for (int i = 0; i < block.GetNumberOfRows(); i++) {
-        SetComponent<Comp2>(i, block, archetype, c2);
+        SetComponent<Comp2>(i, block, 1, c2);
         c2.s += 100;
     }
+
     for (int i = 0; i < block.GetNumberOfRows(); i++) {
-        Comp1 c = GetComponent<Comp1>(i, block, archetype);
+        Comp1* c = GetComponetPtr<Comp1>(i, block, 0);
+        c->x += 1.1f;
         //std::cout << "Comp1: " << c1ptr.x << ", " << c1ptr.y << ", " << c1ptr.z << "\n";
     }
     for (int i = 0; i < block.GetNumberOfRows(); i++) {
-        Comp2 c = GetComponent<Comp2>(i, block, archetype);
+        Comp2* c = GetComponetPtr<Comp2>(i, block, 1);
+        c->s += 1;
         //std::cout << "Comp2: " << c.s << ", " << c.t << "\n";
     }
     return;
 }
 
-struct Combo {
+void Testentt(entt::registry& registry, std::vector<entt::entity>& entitys) {
     Comp1 c1;
-    Comp2 c2;
-};
-void TestNatifArray() {
-    std::array<Combo, 500> combo;
-    Comp1 c1;
-    for (int i = 0; i < 500; i++) {
-        combo[i].c1 = c1;
+    for (entt::entity entity : entitys) {
+        registry.emplace<Comp1>(entity, c1);
     }
     Comp2 c2;
-    for (int i = 0; i < 500; i++) {
-        combo[i].c2 = c2;
+    for (entt::entity entity : entitys) {
+        registry.emplace<Comp2>(entity, c2);
         c2.s += 100;
     }
-    for (int i = 0; i < 500; i++) {
-        Comp1 c1ptr = combo[i].c1;
-        //std::cout << "Comp1: " << c1ptr->x << ", " << c1ptr->y << ", " << c1ptr->z << "\n";
-    }
-    for (int i = 0; i < 500; i++) {
-        Comp2 c = combo[i].c2;
-        //std::cout << "Comp2: " << c.s << ", " << c.t << "\n";
-    }
+    auto viewc1 = registry.view<Comp1>();
+    viewc1.each([](auto& c1) {c1.x += 100.5f; });
+    auto viewc2 = registry.view<Comp2>();
+    viewc2.each([](auto& c2) {c2.s += 100; });
 }
 
 int main(){
+
+    // entity component system
     Archetype archetype;
     archetype.ID = 1;
 
@@ -121,19 +87,37 @@ int main(){
     AddComponent<Comp2>(archetype);
 
     auto start = std::chrono::high_resolution_clock::now();
-    TestBlock(archetype);
+    Block block(archetype);
     auto stop = std::chrono::high_resolution_clock::now();
-
     auto duration = duration_cast<std::chrono::microseconds>(stop - start);
-    std::cout << "Time taken Block: "
+    std::cout << "Time create Block: "
         << duration.count() << " microseconds" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
-    TestNatifArray();
+    TestBlock(block, archetype);
+    stop = std::chrono::high_resolution_clock::now();
+
+    duration = duration_cast<std::chrono::microseconds>(stop - start);
+    std::cout << "Time taken Block: "
+        << duration.count() << " microseconds \n" << std::endl;
+
+    // entt
+    start = std::chrono::high_resolution_clock::now();
+    entt::registry registry;
+    std::vector<entt::entity> entitys;
+    for (int i = 0; i < 1000; i++) {
+        entitys.push_back(registry.create());
+    }
+    stop = std::chrono::high_resolution_clock::now();
+    duration = duration_cast<std::chrono::microseconds>(stop - start);
+    std::cout << "Create registry + entitys: "
+              << duration.count() << " microseconds" << std::endl;
+    start = std::chrono::high_resolution_clock::now();
+    Testentt(registry, entitys);
     stop = std::chrono::high_resolution_clock::now();
 
      duration = duration_cast<std::chrono::microseconds>(stop - start);
-    std::cout << "Time taken Array: "
+    std::cout << "Time taken entt: "
         << duration.count() << " microseconds" << std::endl;
     return 0;
 }

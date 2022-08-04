@@ -3,6 +3,8 @@ project(Entity_Component_System_Test)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_subdirectory(lib/entt)
+
 add_executable(Entity_Component_System_Test
         main.cpp
         #Entity_Component_System/ECS.cpp
@@ -14,6 +16,8 @@ add_executable(Entity_Component_System_Test
         Entity_Component_System/TypeIdGenerator.h
         Entity_Component_System/Block.cpp
         Entity_Component_System/Block.h
-        #Entity_Component_System/ArchetypeContainer.cpp
-        #Entity_Component_System/ArchetypeContainer.h
+        Entity_Component_System/ArchetypeContainer.cpp
+        Entity_Component_System/ArchetypeContainer.h
         )
+
+target_link_libraries(Entity_Component_System_Test PUBLIC EnTT)
