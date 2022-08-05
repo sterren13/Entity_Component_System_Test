@@ -9,6 +9,8 @@
 #include <vector>
 
 struct Archetype {
+    bool HasComponent(ComponentTypeID Component);
+
     ArchetypeID ID;
     std::vector<ComponentTypeID> Components;
     std::vector<TypeComponent> Component_properties;

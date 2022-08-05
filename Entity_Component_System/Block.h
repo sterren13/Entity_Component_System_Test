@@ -6,8 +6,9 @@
 #define ENTITY_COMPONENT_SYSTEM_TEST_BLOCK_H
 #include <cstdint>
 #include <vector>
-#include <set>
+#include <queue>
 #include <iostream>
+#include <unordered_map>
 #include "Archetype.h"
 
 struct BlockLayout {
@@ -16,6 +17,7 @@ struct BlockLayout {
     size_t Alignment;
     std::vector<size_t> ComponentSize;
     std::vector<size_t> StartComponentArray;
+    std::unordered_map<ComponentTypeID, size_t> ComponentMap;
 };
 
 class Block {
@@ -37,8 +39,8 @@ private:
     char* ptr;
     char* EndPtr;
     static size_t BufferSize;
-    BlockLayout Layout;
-    std::set<size_t> FreeSlots;
+    const BlockLayout& Layout;
+    std::queue<size_t> FreeSlots;
     size_t Size = 0;
 };
 

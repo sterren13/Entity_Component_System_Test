@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Entity_Component_System/Block.h"
+#include "Entity_Component_System/ArchetypeContainer.h"
 #include <chrono>
 #include <algorithm>
 #include <array>
@@ -37,29 +37,35 @@ struct Comp2 {
     bool t = true;
 };
 
-void TestBlock(Block& block ,Archetype& archetype) {
-    Comp1 c1;
-    for (int i = 0; i < block.GetNumberOfRows(); i++) {
-        SetComponent<Comp1>(i, block, 0, c1);
+void TestBlock(ArchetypeContainer& container) {
+    Comp1 C1;
+    for (Block* block : container.eachBlcok()) {
+        for (int i = 0; i < block->GetSize(); i++) {
+            block->Set(i, 0, &C1, sizeof(C1));
+        }
     }
-    Comp2 c2;
-    for (int i = 0; i < block.GetNumberOfRows(); i++) {
-        SetComponent<Comp2>(i, block, 1, c2);
-        c2.s += 100;
+    Comp2 C2;
+    for (Block* block : container.eachBlcok()) {
+        for (int i = 0; i < block->GetSize(); i++) {
+            block->Set(i, 1, &C2, sizeof(C2));
+        }
     }
 
-    for (int i = 0; i < block.GetNumberOfRows(); i++) {
-        Comp1* c = GetComponetPtr<Comp1>(i, block, 0);
-        c->x += 1.1f;
-        //std::cout << "Comp1: " << c1ptr.x << ", " << c1ptr.y << ", " << c1ptr.z << "\n";
+    for (Block* block : container.eachBlcok()) {
+        for (int i = 0; i < block->GetSize(); i++) {
+            Comp1* c = (Comp1*)block->GetPtr(i, 0);
+            c->x += 100.0f * i;
+        }
     }
-    for (int i = 0; i < block.GetNumberOfRows(); i++) {
-        Comp2* c = GetComponetPtr<Comp2>(i, block, 1);
-        c->s += 1;
-        //std::cout << "Comp2: " << c.s << ", " << c.t << "\n";
+    for (Block* block : container.eachBlcok()) {
+        for (int i = 0; i < block->GetSize(); i++) {
+            Comp2* c = (Comp2*)block->GetPtr(i, 1);
+            c->s += 100 * i;
+        }
     }
-    return;
 }
+
+#define TestSize 5000
 
 void Testentt(entt::registry& registry, std::vector<entt::entity>& entitys) {
     Comp1 c1;
@@ -69,7 +75,6 @@ void Testentt(entt::registry& registry, std::vector<entt::entity>& entitys) {
     Comp2 c2;
     for (entt::entity entity : entitys) {
         registry.emplace<Comp2>(entity, c2);
-        c2.s += 100;
     }
     auto viewc1 = registry.view<Comp1>();
     viewc1.each([](auto& c1) {c1.x += 100.5f; });
@@ -78,46 +83,59 @@ void Testentt(entt::registry& registry, std::vector<entt::entity>& entitys) {
 }
 
 int main(){
+    {
+        // entity component system
+        Archetype archetype;
+        archetype.ID = 1;
 
-    // entity component system
-    Archetype archetype;
-    archetype.ID = 1;
+        AddComponent<Comp1>(archetype);
+        AddComponent<Comp2>(archetype);
 
-    AddComponent<Comp1>(archetype);
-    AddComponent<Comp2>(archetype);
+        auto start = std::chrono::high_resolution_clock::now();
+        ArchetypeContainer container(archetype);
+        for (int i = 0; i<TestSize; i++)
+            container.AddEntity(i);
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = duration_cast<std::chrono::microseconds>(stop - start);
+        std::cout << "Time create Block: "
+            << duration.count() << " microseconds" << std::endl;
 
-    auto start = std::chrono::high_resolution_clock::now();
-    Block block(archetype);
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = duration_cast<std::chrono::microseconds>(stop - start);
-    std::cout << "Time create Block: "
-        << duration.count() << " microseconds" << std::endl;
+        start = std::chrono::high_resolution_clock::now();
+        TestBlock(container);
+        stop = std::chrono::high_resolution_clock::now();
 
-    start = std::chrono::high_resolution_clock::now();
-    TestBlock(block, archetype);
-    stop = std::chrono::high_resolution_clock::now();
-
-    duration = duration_cast<std::chrono::microseconds>(stop - start);
-    std::cout << "Time taken Block: "
-        << duration.count() << " microseconds \n" << std::endl;
-
-    // entt
-    start = std::chrono::high_resolution_clock::now();
-    entt::registry registry;
-    std::vector<entt::entity> entitys;
-    for (int i = 0; i < 1000; i++) {
-        entitys.push_back(registry.create());
+        duration = duration_cast<std::chrono::microseconds>(stop - start);
+        std::cout << "Time taken Block: "
+            << duration.count() << " microseconds \n" << std::endl;
+        container.RemoveEntity(1);
+        //for (Block* block : container.eachBlcok()) {
+        //    for (int i = 0; i < block->GetSize(); i++) {
+        //        Comp1* c = (Comp1*)block->GetPtr(i, 0);
+        //        Comp2* c2 = (Comp2*)block->GetPtr(i, 1);
+        //        std::cout << "ptr: " << (void*)c << ", xyz: " << c->x << ", " << c->y << ", " << c->z << ", st: " << c2->s << ", " << c2->t << "\n";
+        //    }
+        //}
+        //std::cout << "\n";
     }
-    stop = std::chrono::high_resolution_clock::now();
-    duration = duration_cast<std::chrono::microseconds>(stop - start);
-    std::cout << "Create registry + entitys: "
-              << duration.count() << " microseconds" << std::endl;
-    start = std::chrono::high_resolution_clock::now();
-    Testentt(registry, entitys);
-    stop = std::chrono::high_resolution_clock::now();
+    {
+        // entt
+        auto start = std::chrono::high_resolution_clock::now();
+        entt::registry registry;
+        std::vector<entt::entity> entitys;
+        for (int i = 0; i < TestSize; i++) {
+            entitys.push_back(registry.create());
+        }
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = duration_cast<std::chrono::microseconds>(stop - start);
+        std::cout << "Create registry + entitys: "
+            << duration.count() << " microseconds" << std::endl;
+        start = std::chrono::high_resolution_clock::now();
+        Testentt(registry, entitys);
+        stop = std::chrono::high_resolution_clock::now();
 
-     duration = duration_cast<std::chrono::microseconds>(stop - start);
-    std::cout << "Time taken entt: "
-        << duration.count() << " microseconds" << std::endl;
+        duration = duration_cast<std::chrono::microseconds>(stop - start);
+        std::cout << "Time taken entt: "
+            << duration.count() << " microseconds" << std::endl;
+    }
     return 0;
 }
