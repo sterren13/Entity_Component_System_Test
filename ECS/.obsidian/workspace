@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Archetype container.md",
+            "file": "Archetype.md",
             "mode": "preview",
             "source": false
           }
@@ -77,7 +77,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Archetype container.md",
+                "file": "Archetype.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -94,7 +94,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Archetype container.md",
+                "file": "Archetype.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -117,7 +117,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Archetype container.md"
+                "file": "Archetype.md"
               }
             }
           }
@@ -129,12 +129,12 @@
   },
   "active": "7f1d35ee6cc8a86a",
   "lastOpenFiles": [
+    "Registry.md",
+    "Archetype container.md",
     "Block.md",
     "Block Layout.md",
     "Entity.md",
-    "Registry.md",
     "Archetype.md",
-    "Archetype container.md",
     "ID's.md"
   ]
 }

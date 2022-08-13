@@ -4,12 +4,14 @@
 
 #include "ArchetypeContainer.h"
 
-ArchetypeContainer::ArchetypeContainer(Archetype& archetype){
+ArchetypeContainer::ArchetypeContainer(Archetype& archetype, std::unordered_map<ArchetypeID , TypeComponent>& Components){
     // calculate buffer layout
     size_t RelativelyAdress = 0;
     size_t MaxAlignment = 1;
     std::vector<size_t> ComponentArrayAlignments;
-    for (TypeComponent component : archetype.Component_properties) { // TODO make component map
+    for (ComponentTypeID componentID : archetype.Components) { // TODO make component map
+        // get component
+        TypeComponent component = Components[componentID];
         // add component size's
         Layout.ComponentSize.push_back(component.Size);
         RelativelyAdress += component.Size;
@@ -35,9 +37,8 @@ ArchetypeContainer::ArchetypeContainer(Archetype& archetype){
     RelativelyAdress = (Layout.ComponentSize[0] * Layout.Rows) + ComponentArrayAlignments[0];
     for (int i = 1; i < Layout.Columns; i++) {
         Layout.StartComponentArray.push_back(RelativelyAdress);
-        RelativelyAdress += (Layout.ComponentSize[0] * Layout.Rows) + ComponentArrayAlignments[0];
+        RelativelyAdress += (Layout.ComponentSize[i] * Layout.Rows) + ComponentArrayAlignments[0];
     }
-
     // TODO check of buffer groot genoeg is voor mintstens een component
 }
 
@@ -53,7 +54,7 @@ void ArchetypeContainer::AddEntity(EntityID entity){
         if ((*it)->HasFreeSlot()){
             size_t index = (*it)->AddEntity();
             size_t BlockIndex = it - Blocks.begin();
-            EntityMap.insert({entity,{BlockIndex, index}});
+            EntityMap.push_back({entity,{BlockIndex, index}});
             return;
         }
     }
@@ -61,19 +62,40 @@ void ArchetypeContainer::AddEntity(EntityID entity){
     Blocks.push_back(new Block(Layout));
     size_t BlockIndex = Blocks.back()->GetSize();
     size_t index = Blocks.back()->AddEntity();
-    EntityMap.insert({entity,{BlockIndex, index}});
+    EntityMap.push_back({entity,{BlockIndex, index}});
 }
 
-// TODO fix vector error
-void ArchetypeContainer::RemoveEntity(EntityID entity){
-    EntityLocation location = EntityMap[entity]; // find location
+void ArchetypeContainer::RemoveEntity(EntityID entity){ // TODO change all entity after removed entity in block
+    EntityLocation location = GetEntityLocation(entity); // find location
     Blocks[location.BlockIndex]->RemoveEntity(location.Index); // remove entity from block
-    EntityMap.erase(entity); // remove entity form entity map
+    for (std::pair<EntityID, EntityLocation>& element : EntityMap) {
+        if ((location.BlockIndex == element.second.BlockIndex) && (location.Index < element.second.Index)) {
+            element.second.Index--;
+        }
+    }
+    EntityMap.erase(GetEnity(entity)); // remove entity form entity map
 }
 
 void ArchetypeContainer::GetCompoent(EntityID entity, ComponentTypeID Component,void* DestenationPtr){
-    EntityLocation location = EntityMap[entity]; // find location
+    EntityLocation location = GetEntityLocation(entity); // find location
     // find component index
     size_t ComponentIndex = Layout.ComponentMap[Component];
     Blocks[location.BlockIndex]->GetCopy(location.Index, ComponentIndex, DestenationPtr, Layout.ComponentSize[Component]); // copy data to ptr
+}
+
+void* ArchetypeContainer::GetComponentPtr(EntityID entity, ComponentTypeID Component){
+    EntityLocation location = GetEntityLocation(entity); // find location
+    // find component index
+    size_t ComponentIndex = Layout.ComponentMap[Component];
+    return Blocks[ComponentIndex]->GetPtr(location.Index, ComponentIndex);
+}
+
+std::vector<std::pair<EntityID, EntityLocation>>::iterator ArchetypeContainer::GetEnity(EntityID entity) {
+    return std::find_if(EntityMap.begin(), EntityMap.end(), [&](std::pair<EntityID, EntityLocation> element) {
+        return element.first == entity;
+        });
+}
+
+EntityLocation ArchetypeContainer::GetEntityLocation(EntityID entity) {
+    return GetEnity(entity)->second;
 }

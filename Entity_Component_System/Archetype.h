@@ -13,8 +13,8 @@ struct Archetype {
 
     ArchetypeID ID;
     std::vector<ComponentTypeID> Components;
-    std::vector<TypeComponent> Component_properties;
 };
 
+ArchetypeID CreateHash(Archetype& archetype);
 
 #endif //ENTITY_COMPONENT_SYSTEM_TEST_ARCHETYPE_H

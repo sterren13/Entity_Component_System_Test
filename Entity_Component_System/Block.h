@@ -40,7 +40,6 @@ private:
     char* EndPtr;
     static size_t BufferSize;
     const BlockLayout& Layout;
-    std::queue<size_t> FreeSlots;
     size_t Size = 0;
 };
 

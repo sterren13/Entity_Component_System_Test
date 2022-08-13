@@ -3,6 +3,8 @@
 //
 
 #include "Archetype.h"
+#include "../CustomECS/Archetype.h"
+
 #include <algorithm>
 
 bool Archetype::HasComponent(ComponentTypeID Component){
@@ -11,4 +13,17 @@ bool Archetype::HasComponent(ComponentTypeID Component){
         return false;
     }
     return true;
+}
+
+ArchetypeID Mix(ArchetypeID State, ComponentTypeID ComponentHash){
+    return (State * ComponentHash) ^ ((State << 3) + (ComponentHash >> 2));
+}
+
+ArchetypeID CreateHash(Archetype& archetype){
+    ArchetypeID StartState = 0xA6A6A6A6;
+
+    for (ComponentTypeID component : archetype.Components)
+        StartState = Mix(StartState, component);
+
+    return StartState;
 }

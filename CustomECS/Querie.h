@@ -1,0 +1,14 @@
+//
+// Created by sterr on 11-8-2022.
+//
+
+#ifndef ENTITY_COMPONENT_SYSTEM_TEST_QUERIE_H
+#define ENTITY_COMPONENT_SYSTEM_TEST_QUERIE_H
+
+
+class Querie {
+
+};
+
+
+#endif //ENTITY_COMPONENT_SYSTEM_TEST_QUERIE_H

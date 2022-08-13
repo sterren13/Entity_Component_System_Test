@@ -5,6 +5,7 @@
 #ifndef ENTITY_COMPONENT_SYSTEM_TEST_TYPEIDGENERATOR_H
 #define ENTITY_COMPONENT_SYSTEM_TEST_TYPEIDGENERATOR_H
 #include <cstdint>
+#include <iostream>
 
 #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) &&     !defined(__ILP32__) ) || defined(_M_X64) || defined(__ia64) || defined (_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
   typedef std::uint64_t IDType;
@@ -22,8 +23,8 @@ template<class T>
 class TypeIDGenerator {
 public:
     static const IDType GetNewID(){
-        static const IDType idCounter = m_counter++;
-        return idCounter;
+        m_counter++;
+        return m_counter;
     }
 private:
     static IDType m_counter;

@@ -7,9 +7,9 @@
 #include "TypeIdGenerator.h"
 
 struct TypeComponent {
-    const ComponentTypeID ID;
-    const size_t Size;
-    const size_t Alignment;
+    ComponentTypeID ID;
+    size_t Size;
+    size_t Alignment;
 };
 
 

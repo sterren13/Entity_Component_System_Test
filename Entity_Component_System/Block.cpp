@@ -38,10 +38,6 @@ Block::Block(BlockLayout& m_Layout) : Layout(m_Layout) {
     ptr = static_cast<char*>(p);
     EndPtr = ptr + BufferSize;
     //std::cout << "Amount of entity: " << Layout.Rows << "\n";
-    // create free slot queue
-    for (int i = 0; i < Layout.Rows; i++){
-        FreeSlots.push(i);
-    }
 }
 
 Block::~Block() { // TODO delete buffer
@@ -71,30 +67,30 @@ void Block::GetCopy(size_t row, size_t column, void* DestenationPtr, size_t size
 }
 
 bool Block::HasFreeSlot(){
-    return !FreeSlots.empty();
+    return !(Size == Layout.Rows);
 }
 
 size_t Block::AddEntity(){
-    size_t index = FreeSlots.front();
-    FreeSlots.pop();
+    size_t index = Size;
     Size++;
     return index;
 }
 
-void Block::RemoveEntity(size_t index){
+void Block::RemoveEntity(size_t index){ // TODO change indexes from movet entitys
     // check of index lost index
     if (!(index == Size-1)) {
         // move data to close de gab from de remove entity
+        //std::cout << "Index: " << index << ", Size: " << Size << "\n";
         for (int i = 0; i < Layout.Columns; i++) {
             char *CompoentPtr = (char *) GetPtr(index, i);
             size_t CopySize = (Size - index + 1) * Layout.ComponentSize[i]; // calculate size to copy
-            memmove(CompoentPtr, (CompoentPtr + Layout.ComponentSize[i]), CopySize); // copy data use memmove for overlaping dst en src
+            char* src = (CompoentPtr + Layout.ComponentSize[i]);
+            assert(EndPtr > (src + CopySize) && ptr < src);
+            memmove(CompoentPtr, src, CopySize); // copy data use memmove for overlaping dst en src
         }
         Size--;
-        FreeSlots.push(Size);
     }
     else { // is las index
         Size--;
-        FreeSlots.push(Size);
     }
 }

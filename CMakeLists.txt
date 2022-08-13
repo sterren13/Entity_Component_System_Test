@@ -7,15 +7,10 @@ add_subdirectory(lib/entt)
 
 add_executable(Entity_Component_System_Test
         main.cpp
-        Entity_Component_System/ECS.cpp
-        Entity_Component_System/ECS.h
-        Entity_Component_System/Component.h
-        Entity_Component_System/Archetype.h
-        Entity_Component_System/TypeIdGenerator.h
-        Entity_Component_System/Block.cpp
-        Entity_Component_System/Block.h
-        Entity_Component_System/ArchetypeContainer.cpp
-        Entity_Component_System/ArchetypeContainer.h
-        Entity_Component_System/Archetype.cpp Entity_Component_System/EntityPrefab.cpp Entity_Component_System/EntityPrefab.h)
+        CustomECS/Storage.cpp
+        CustomECS/Storage.h
+        CustomECS/Querie.cpp
+        CustomECS/Querie.h
+        CustomECS/Types.h CustomECS/Archetype.cpp CustomECS/Archetype.h CustomECS/ComponentManger.cpp CustomECS/ComponentManger.h CustomECS/Utilites.h CustomECS/ECS.cpp CustomECS/ECS.h CustomECS/Block.h)
 
 target_link_libraries(Entity_Component_System_Test PUBLIC EnTT)
