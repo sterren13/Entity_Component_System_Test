@@ -14,7 +14,7 @@ typedef IDType Type_ID;
 
 typedef std::unordered_set<Archetype_ID> ArchetypeSet;
 
-struct Record {
+struct  Record {
     Archetype_ID Archetype;
     size_t row;
 };

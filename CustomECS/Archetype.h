@@ -9,18 +9,19 @@
 
 #include "Block.h"
 #include "Types.h"
+#include "ComponentManger.h"
 
 struct ArchetypeBuilder{
-    std::vector<Type_ID> Components; // list of all component from archetype
+    Archetype_ID ID = 0;
+    std::vector<Component> Components; // list of all component from archetype
     std::vector<Type_ID> Tags; // list of all tags (components with no data)
-    std::vector<size_t> ComponentSises; // list of size from all components
-    std::vector<size_t> ComponentAlignment; // list of all component alignment
 };
 
 class Archetype {
 public:
     Archetype(ArchetypeBuilder& builder);
     ~Archetype();
+    ArchetypeBuilder&  GetBuilder() { return my_builder;}
     size_t AddEntity(); // add new entity to archetype and returns index
     void RemoveEntity(size_t index); // removes entity and copy data from last entity en movies it
     void* GetComponentPtr(size_t index, Type_ID ComponentID); // returns pointer to component from entity bay index
@@ -32,6 +33,7 @@ private:
     size_t GetLocalBlockIndex(size_t Index);
 
 private:
+    ArchetypeBuilder my_builder;
     size_t MaxBlockSize; // max entity in one block
     size_t LastIndex = 0; // last index of all blocks
     size_t BlockAlignment = 1;

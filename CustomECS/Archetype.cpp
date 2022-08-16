@@ -5,15 +5,15 @@
 #include "Archetype.h"
 #include <memory>
 
-Archetype::Archetype(ArchetypeBuilder& builder) { // TODO check of archetype has data when not do not create buffer and check of has tags
+Archetype::Archetype(ArchetypeBuilder& builder) : my_builder(builder) { // TODO check of archetype has data when not do not create buffer and check of has tags
     // calculate buffer layout
     size_t RelativelyAddress = 0;
     std::vector<size_t> ComponentArrayAlignments;
 
     // calculate component array alignments
     for (size_t i = 0; i < builder.Components.size(); i++){
-        size_t ComponentSize = builder.ComponentSises[i];
-        size_t ComponentAlignment = builder.ComponentAlignment[i];
+        size_t ComponentSize = builder.Components[i].Size;
+        size_t ComponentAlignment = builder.Components[i].Alignment;
 
         // find max alignment
         if (BlockAlignment < ComponentAlignment)
@@ -29,14 +29,14 @@ Archetype::Archetype(ArchetypeBuilder& builder) { // TODO check of archetype has
     MaxBlockSize = BLOCK_SIZE / RelativelyAddress;
     RelativelyAddress = 0;
     size_t ArrayAlignment = 0;
-    for (size_t i = 0; i < builder.Components.size(); i++){
-        size_t ComponentSize = builder.ComponentSises[i];
+    for (size_t i = 0; i < builder.Components.size(); i++){ // TODO voeg juiste alignment toe
+        size_t ComponentSize = builder.Components[i].Size;
         if (ComponentArrayAlignments.size()-1 != i)
             ArrayAlignment = ComponentArrayAlignments[i+1];
         else
             ArrayAlignment = 0;
 
-        ComponentMap.insert({builder.Components[i],
+        ComponentMap.insert({builder.Components[i].ID,
                              {ComponentSize,
                               i,
                               RelativelyAddress}});

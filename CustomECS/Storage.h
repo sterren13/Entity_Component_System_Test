@@ -9,17 +9,23 @@
 
 #include "Types.h"
 #include "Archetype.h"
+#include "ComponentManger.h"
 
 // manger fore storing component data in archetypes
 
 class Storage {
 public:
-    Storage();
+    Storage(ComponentManger& componentManger);
     ~Storage();
-    Archetype_ID CreateArchetype(ArchetypeBuilder& builder); // TODO sort component bay size and tag bay id size
+    static Archetype_ID CalculateArchetypeID(ArchetypeBuilder& builder);
+    Archetype_ID CreateArchetype(ArchetypeBuilder& builder);
     Archetype* GetArchetype(Archetype_ID archetypeId);
+    void AddID(Entity_ID id);
+    bool HasArchtype(Archetype_ID archetypeId);
 private:
+    ComponentManger& my_componentManger;
     std::unordered_map<Archetype_ID, Archetype*> ArchetypeID; // index from archetypeID to find ptr to archetype
+    Archetype* RootArchetype;
     std::unordered_map<Type_ID, ArchetypeSet> Archetype_Set_Index; // Component to set of archetype set
 };
 
